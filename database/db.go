@@ -2,36 +2,41 @@ package database
 
 import (
 	"fmt"
+	"os"
+
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"github.com/joho/godotenv"
 )
 
-type Database struct {
-	DB *gorm.DB
-}
+func NewConnection() (*gorm.DB, error) {
+	err := godotenv.Load(); if err != nil {
+		return nil, fmt.Errorf("Error loading .env file: %w", err);
+	}
 
-type Data struct {
-	ID			uint	`json:"id" gorm:"primaryKey"`
-	Temperature	float32	`json:"temperature"`
-}
-
-func NewConnection() (*Database, error) {
-	// Postgres Host
-	dsn := ""
+	dsn := fmt.Sprintf(
+		"host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
+        os.Getenv("DB_HOST"),
+        os.Getenv("DB_USER"),
+        os.Getenv("DB_PASSWORD"),
+        os.Getenv("DB_NAME"),
+        os.Getenv("DB_PORT"),
+        os.Getenv("DB_SSLMODE"),
+	);
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{}); if err != nil {
 		return nil, fmt.Errorf("Failed to connect to database: %w", err);
 	}
 
-	err = db.AutoMigrate(&Data{}); if err != nil {
-		return nil, fmt.Errorf("failed to migrate database: %w", err);
+	err = db.AutoMigrate(&SensorData{}); if err != nil {
+		return nil, fmt.Errorf("Failed to migrate database: %w", err);
 	}
 
-	return &Database{DB: db}, nil;
+	return db, nil;
 }
 
-func (d *Database) GetAllData() ([]Data, error) {
-	var alldata []Data;
-	result := d.DB.Find(&alldata);
+func GetAllData(db *gorm.DB) ([]SensorData, error) {
+	var alldata []SensorData;
+	result := db.Find(&alldata);
 	return alldata, result.Error;
 }

@@ -6,10 +6,8 @@ import (
 	"net/http"
 )
 
-// "github.com/kaua-matheus/greenhouse-application/server"
-
 func main() {
-	resp, err := http.Get("http://localhost:8080/test"); if err != nil {
+	resp, err := http.Get("http://localhost:8080/data"); if err != nil {
 		fmt.Printf("Error trying to execute http.Get: %s\n", err);
 		return;
 	};
