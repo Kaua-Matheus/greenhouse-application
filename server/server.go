@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/kaua-matheus/greenhouse-application/database"
@@ -19,7 +20,7 @@ func Serve(){
 	}
 
 	// Get
-	router.GET("/test", func(c *gin.Context) {
+	router.GET("/", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"status": http.StatusOK,
 			"message": "A API está funcionando.",
@@ -39,6 +40,59 @@ func Serve(){
 			"data": data,
 		})
 	})
+
+	// Post
+	router.POST("/data", func (c *gin.Context) {
+		data := database.SensorData{};
+		
+		if err := c.BindJSON(&data); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"status": http.StatusBadRequest,
+				"message": "Error: Bind JSON doesn't work as well",
+			})
+		}
+
+		database.AddData(connection, data);
+		c.JSON(http.StatusOK, gin.H{
+			"status": http.StatusOK,
+			"data": "Data registered successfully",
+		})
+	})
+
+	// Put
+	router.PUT("/data/:id", func (c *gin.Context){
+		data := database.SensorData{}
+
+		id_str := c.Param("id");
+		id, err := strconv.Atoi(id_str); if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"status": http.StatusBadRequest,
+				"message": "Error: Couldn't transform str id in integer id",
+			})
+		}
+
+		if err := c.BindJSON(&data); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"status": http.StatusBadRequest,
+				"message": "Error: Bind JSON doesn't work as well",
+			})
+		}
+
+		err = database.UpdateData(connection, uint(id),  data); if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"status": http.StatusInternalServerError,
+				"message": "Error: Couldn't update the data",
+			})
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"status": http.StatusOK,
+			"data": "Data updated successfully",
+		})
+
+	})
+
+	// Delete
+	
 
 	router.Run();
 }

@@ -40,3 +40,24 @@ func GetAllData(db *gorm.DB) ([]SensorData, error) {
 	result := db.Find(&alldata);
 	return alldata, result.Error;
 }
+
+func AddData(db *gorm.DB, data SensorData) {
+	db.Create(&data);
+
+	fmt.Println("Data added successfully");
+}
+
+func UpdateData(db *gorm.DB, id uint, data SensorData) error {
+
+	result := db.Model(&SensorData{}).Where("id = ?", id).Updates(data);
+	if result.Error !=  nil {
+		return fmt.Errorf("Failed to update specific field: %w", result.Error)
+	}
+
+	fmt.Println("Data updated successfully");
+	return nil;
+}
+
+func DeleteData() {
+	
+}
