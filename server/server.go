@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/kaua-matheus/greenhouse-application/database"
 )
 
@@ -64,10 +64,10 @@ func Serve(){
 		data := database.SensorData{}
 
 		id_str := c.Param("id");
-		id, err := strconv.Atoi(id_str); if err != nil {
+		id, err := uuid.Parse(id_str); if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"status": http.StatusBadRequest,
-				"message": "Error: Couldn't transform str id in integer id",
+				"message": "Error: Invalid UUID format",
 			})
 		}
 
@@ -78,7 +78,7 @@ func Serve(){
 			})
 		}
 
-		err = database.UpdateData(connection, uint(id),  data); if err != nil {
+		err = database.UpdateData(connection, id,  data); if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"status": http.StatusInternalServerError,
 				"message": "Error: Couldn't update the data",
@@ -92,7 +92,30 @@ func Serve(){
 	})
 
 	// Delete
-	
+	router.DELETE("/data/:id", func (c *gin.Context){
+		id_str := c.Param("id");
+		id, err := uuid.Parse(id_str); if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"status": http.StatusBadRequest,
+				"message": "Error: Invalid UUID format",
+			})
+			return;
+		}
+
+		if err := database.DeleteData(connection, id); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"status": http.StatusInternalServerError,
+				"message": "Error: Couldn't delete the data",
+				"error": err,
+			})
+			return;
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"status": http.StatusOK,
+			"data": "Data deleted successfully",
+		})
+	})
 
 	router.Run();
 }
