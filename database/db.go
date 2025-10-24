@@ -26,23 +26,31 @@ func NewConnection() (*gorm.DB, error) {
         os.Getenv("DB_SSLMODE"),
 	);
 
-	fmt.Printf("Connecting in the database with: %s\n", dsn);
-
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{}); if err != nil {
 		return nil, fmt.Errorf("Failed to connect to database: %w", err);
 	}
 
 	fmt.Println("Connected to database successfully!")
-    fmt.Println("Starting AutoMigrate...")
 
-	err = db.AutoMigrate(&SensorData{}); if err != nil {
+	err = db.AutoMigrate(
+		&GlpData{},
+		&GlpParameters{},
+		); if err != nil {
 		return nil, fmt.Errorf("Failed to migrate database: %w", err);
 	}
 
 	fmt.Println("AutoMigrate completed successfully!")
 
-	if db.Migrator().HasTable(&SensorData{}) {
-        fmt.Println("Table 'sensor_data' exists!")
+	// GlpData
+	if db.Migrator().HasTable(&GlpData{}) {
+        fmt.Printf("Table %s exists!", GlpData{}.TableName())
+    } else {
+        fmt.Println("WARNING: Table 'sensor_data' was not created!")
+    }
+
+	// GlpParameters
+	if db.Migrator().HasTable(&GlpParameters{}) {
+        fmt.Printf("Table %s exists!", GlpParameters{}.TableName())
     } else {
         fmt.Println("WARNING: Table 'sensor_data' was not created!")
     }
@@ -50,14 +58,36 @@ func NewConnection() (*gorm.DB, error) {
 	return db, nil;
 }
 
-func GetAllData(db *gorm.DB) ([]SensorData, error) {
 
-	var alldata []SensorData;
+// Glp Parameters Fun
+func GetAllParameters(db *gorm.DB) ([]GlpParameters, error) {
+
+	var alldata []GlpParameters;
 	result := db.Find(&alldata);
 	return alldata, result.Error;
 }
 
-func AddData(db *gorm.DB, data SensorData) error {
+func UpdateParameter(db *gorm.DB, id uint, data GlpParameters) error {
+
+	result := db.Model(&GlpParameters{}).Where("id = ?", id).Updates(data);
+	if result.Error !=  nil {
+		return fmt.Errorf("Failed to update specific field: %w", result.Error)
+	}
+
+	fmt.Println("Data updated successfully");
+	return nil;
+}
+
+
+// Glp Data Fun
+func GetAllData(db *gorm.DB) ([]GlpData, error) {
+
+	var alldata []GlpData;
+	result := db.Find(&alldata);
+	return alldata, result.Error;
+}
+
+func AddData(db *gorm.DB, data GlpData) error {
 
 	result := db.Create(&data); if result.Error != nil {
 		return fmt.Errorf("Failed to add data: %w", result.Error)
@@ -67,9 +97,9 @@ func AddData(db *gorm.DB, data SensorData) error {
 	return nil;
 }
 
-func UpdateData(db *gorm.DB, id uuid.UUID, data SensorData) error {
+func UpdateData(db *gorm.DB, id uuid.UUID, data GlpData) error {
 
-	result := db.Model(&SensorData{}).Where("id = ?", id).Updates(data);
+	result := db.Model(&GlpData{}).Where("id = ?", id).Updates(data);
 	if result.Error !=  nil {
 		return fmt.Errorf("Failed to update specific field: %w", result.Error)
 	}
@@ -80,7 +110,7 @@ func UpdateData(db *gorm.DB, id uuid.UUID, data SensorData) error {
 
 func DeleteData(db *gorm.DB, id uuid.UUID) error {
 	
-	result := db.Delete(&SensorData{}, id);
+	result := db.Delete(&GlpData{}, id);
 	if result == nil {
 		return fmt.Errorf("Failed to delete the data: delete returned nil result");
 	}

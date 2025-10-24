@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -28,6 +29,61 @@ func Serve(){
 		return;
 	}
 
+
+	// Parameters
+	// Get
+	router.GET("/parameters", func (c *gin.Context) {
+		data, err := database.GetAllParameters(connection); if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"status": http.StatusInternalServerError,
+				"message": "An error occurs trying to get all the parameters",
+			})
+			return;
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"status": http.StatusOK,
+			"data": data,
+		})
+	})
+
+	// Put
+	router.PUT("/parameter/:id", func (c *gin.Context){
+		parameter := database.GlpParameters{}
+
+		id_str := c.Param("id");
+		id, err := strconv.Atoi(id_str); if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"status": http.StatusBadRequest,
+				"message": "Error: Invalid UINT format",
+			})
+			return;
+		}
+
+		if err := c.BindJSON(&parameter); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"status": http.StatusBadRequest,
+				"message": "Invalid JSON payload",
+			})
+			return;
+		}
+
+		err = database.UpdateParameter(connection, uint(id), parameter); if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"status": http.StatusInternalServerError,
+				"message": "Error: Couldn't update the parameter",
+			})
+			return;
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"status": http.StatusOK,
+			"data": "Parameter updated successfully",
+		})
+
+	})
+
+
+	// Data
 	// Get
 	router.GET("/", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
@@ -53,7 +109,7 @@ func Serve(){
 
 	// Post
 	router.POST("/data", func (c *gin.Context) {
-		data := database.SensorData{};
+		data := database.GlpData{};
 		
 		if err := c.BindJSON(&data); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
@@ -72,7 +128,7 @@ func Serve(){
 
 	// Put
 	router.PUT("/data/:id", func (c *gin.Context){
-		data := database.SensorData{}
+		data := database.GlpData{}
 
 		id_str := c.Param("id");
 		id, err := uuid.Parse(id_str); if err != nil {
