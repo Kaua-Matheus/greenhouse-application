@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/kaua-matheus/greenhouse-application/database"
@@ -15,8 +16,16 @@ func main(){
 
 func Serve(){
 	router := gin.Default();
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:		[]string{"http://localhost:3000"},
+		AllowMethods:		[]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     	[]string{"Origin", "Content-Type", "Accept", "Authorization"},
+		AllowCredentials: 	true,
+	}))
+
 	connection, err := database.NewConnection(); if err != nil {
 		fmt.Printf("An error occurs trying to create a connection: %s", err);
+		return;
 	}
 
 	// Get
@@ -33,6 +42,7 @@ func Serve(){
 				"status": http.StatusInternalServerError,
 				"message": "An error occurs trying to get all the data",
 			})
+			return;
 		}
 
 		c.JSON(http.StatusOK, gin.H{
@@ -48,8 +58,9 @@ func Serve(){
 		if err := c.BindJSON(&data); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"status": http.StatusBadRequest,
-				"message": "Error: Bind JSON doesn't work as well",
+				"message": "Invalid JSON payload",
 			})
+			return;
 		}
 
 		database.AddData(connection, data);
@@ -69,13 +80,15 @@ func Serve(){
 				"status": http.StatusBadRequest,
 				"message": "Error: Invalid UUID format",
 			})
+			return;
 		}
 
 		if err := c.BindJSON(&data); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"status": http.StatusBadRequest,
-				"message": "Error: Bind JSON doesn't work as well",
+				"message": "Invalid JSON payload",
 			})
+			return;
 		}
 
 		err = database.UpdateData(connection, id,  data); if err != nil {
@@ -83,6 +96,7 @@ func Serve(){
 				"status": http.StatusInternalServerError,
 				"message": "Error: Couldn't update the data",
 			})
+			return;
 		}
 		c.JSON(http.StatusOK, gin.H{
 			"status": http.StatusOK,
