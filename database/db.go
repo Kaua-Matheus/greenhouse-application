@@ -67,7 +67,7 @@ func GetAllParameters(db *gorm.DB) ([]GlpParameters, error) {
 	return alldata, result.Error;
 }
 
-func UpdateParameter(db *gorm.DB, id uint, data GlpParameters) error {
+func UpdateParameter(db *gorm.DB, id uint, data map[string]interface{}) error {
 
 	result := db.Model(&GlpParameters{}).Where("id = ?", id).Updates(data);
 	if result.Error !=  nil {
@@ -98,6 +98,8 @@ func AddData(db *gorm.DB, data GlpData) error {
 }
 
 func UpdateData(db *gorm.DB, id uuid.UUID, data GlpData) error {
+
+	// Talvez seja melhor usar map[string]interface{}
 
 	result := db.Model(&GlpData{}).Where("id = ?", id).Updates(data);
 	if result.Error !=  nil {
